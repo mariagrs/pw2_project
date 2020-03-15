@@ -44,7 +44,7 @@ const actions = {
   },
 
   async fetchSession ({ commit }, { id }) {
-    const { data } = await axios.get(api('/sessions/' + id)) // jai rejouté un s
+    const { data } = await axios.get(api('/session/' + id))
     commit('addSession', { session: data })
   },
 
