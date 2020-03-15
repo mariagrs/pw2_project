@@ -1,27 +1,57 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
+import store from '../store/index'
+import Login from '@/views/login'
+import Home from '@/views/Home'
+import Module from '@/views/Module'
+import Session from '@/views/StudentView'
+import dashboard from '@/components/dashboard'
 
 Vue.use(VueRouter)
 
+async function beforeEnter (_to, _from, next) {
+  if (!store.getters['user/isAuthenticated']) {
+    await store.dispatch('user/fetchUser')
+  }
+  if (store.getters['user/isAuthenticated']) {
+    next()
+    return
+  }
+  next('/login')
+}
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: Home
+    name: 'home',
+    component: Home,
+    beforeEnter
   },
   {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    path: '/login',
+    name: 'Login',
+    component: Login
+  },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: dashboard,
+    beforeEnter
+  },
+  {
+    path: '/module/:id',
+    component: Module
+  },
+  {
+    path: '/sessions/:id/do',
+    component: Session
+  },
+  {
+    path: '/session/:id/do/:exercise',
+    component: Session
   }
+
 ]
 
-const router = new VueRouter({
+export default new VueRouter({
   routes
 })
-
-export default router
