@@ -24,6 +24,7 @@
         color="#0a0a0a"
         shaped
         @click="doExercise(index)"
+        :href="'/#/session/1/do/' + exercise.id"
         dark
         v-for="(exercise, index) in getExercisesBySessionId(this.sessionId)"
         :key="exercise.id"
@@ -126,7 +127,7 @@ export default {
   async mounted () {
     this.editor = ace.edit('editor')
     this.editor.setTheme('ace/theme/monokai')
-    this.editor.session.setMode(`ace/mode/${this.lang}`)
+    this.editor.session.setMode('ace/mode/python')
 
     await this.fetchExercisesForSession({
       sessionId: this.sessionId
