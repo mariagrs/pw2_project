@@ -5,9 +5,76 @@
     >
       <div class = "dashboard">
         <v-toolbar dense>
-          <v-toolbar-title>Hephaïstos</v-toolbar-title>
+          <v-toolbar-title>Editeur d'exercice</v-toolbar-title>
         </v-toolbar>
+        <v-form>
+          <v-row>
+            <v-col>
+              <v-container>
+                <v-row>
+                  <v-col cols="12" sm="5">
+                    <v-text-field
+                      v-model="title"
+                      label="title"
+                      single-line
+                    ></v-text-field>
+                  </v-col>
 
+                  <v-col class="d-flex" cols="12" sm="4">
+                    <v-select
+                      :items="items"
+                    ></v-select>
+                  </v-col>
+
+                  <v-btn class="ma-6" color="blue" dark  @click="save">
+                    <v-icon dark>mdi-content-save</v-icon>
+                  </v-btn>
+                </v-row>
+                <div>
+                  <p class="font-weight-bold headline">Consignes</p>
+                </div>
+                <v-col cols="12" md="10">
+                  <v-textarea
+                    v-model="consignes"
+                    solo
+                    name="input-7-4"
+                  ></v-textarea>
+                </v-col>
+                <div>
+                  <p class="font-weight-bold headline">Template de résolution</p>
+                </div>
+                <v-col cols="12" md="10">
+                  <v-textarea
+                    solo
+                    name="input-7-4"
+                  ></v-textarea>
+                </v-col>
+              </v-container>
+            </v-col>
+
+            <v-col>
+              <div>
+                <p class="font-weight-bold headline">Test</p>
+              </div>
+              <div id="tests_editor" class="exercise-editor-ace-editor" ></div>
+              <br>
+              <v-row>
+                <div>
+                  <p class="font-weight-bold headline">Sandbox</p>
+                </div>
+                <v-btn small color="blue" dark @click="play">
+                <v-icon dark>mdi-play</v-icon>
+                </v-btn>
+              </v-row>
+              <div id="solution_editor"  class="exercise-editor-ace-editor">
+              </div>
+              <br>
+              <div>
+                <p class="font-weight-bold headline">Résultats des tests</p>
+              </div>
+            </v-col>
+          </v-row>
+        </v-form>
       </div>
     </v-card>
 </template>
@@ -21,7 +88,11 @@ import 'ace-builds/webpack-resolver'
 export default {
   name: 'dashboard',
   data: () => ({
-    title: ''
+    title: '',
+    items: ['Python'],
+    consignes: '',
+    solution_editor: null,
+    tests_editor: null
   }),
   mounted () {
     this.tests_editor = ace.edit('tests_editor')

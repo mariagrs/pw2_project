@@ -69,7 +69,7 @@
             </v-btn>
             </div>
         </v-row>
-        <div id="editor" class="exercise-editor-ace-editor"></div>
+        <div id="editor_test" class="exercise-editor-ace-editor"></div>
         </div>
         <div v-else>
             <v-card-title>Please select an exercise</v-card-title>
@@ -82,7 +82,9 @@
         sm="6"
         md="6">
 
-        <v-card-title>Tests</v-card-title>
+        <v-card-title>Solution</v-card-title>
+
+        <div id="editor_solution" class="exercise-editor-ace-editor"></div>
 
         </v-col>
     </v-row>
@@ -103,52 +105,98 @@ import 'ace-builds/webpack-resolver'
 export default {
   name: 'StudentView',
   data: () => ({
-    editor: null,
-    exercise: null
+    editor_solution: null,
+    editor_test: null,
+    exercise: null,
+    contentJustChanged: false
   }),
   computed: {
     ...mapGetters('exercises', ['getExercisesBySessionId', 'getExerciseById']),
-    ...mapGetters('attempts', ['getLastAttemptForExercise']),
+    ...mapGetters('attempts', ['getLastAttemptForExercise', 'lastAttemptResults']),
     sessionId () {
       return parseInt(this.$route.params.id)
+    },
+    lastAttempt () {
+      return this.getLastAttemptForExercise(this.exerciseId) || {}
     },
     exerciseId () {
       return parseInt(this.$route.params.exercise)
     }
   },
   methods: {
-    async play () {
-      try {
-        await this.fetchLastAttemptForExercise({ sessionId: this.sessionId, exerciseId: this.exerciseId })
-        this.exercise = this.getLastAttemptForExercise(this.exerciseId)
-      } catch (err) {
-        console.log(err)
-      }
-    },
     ...mapActions('exercises', ['fetchExercisesForSession', 'fetchExerciseForSession']),
     async load () {
       await this.fetchExerciseForSession({ sessionId: this.sessionId, exerciseId: this.exerciseId })
       this.exercise = this.getExerciseById(this.exerciseId)
     },
-    ...mapActions('attempts', ['fetchLastAttemptForExercise'])
+    ...mapActions('attempts', ['fetchLastAttemptForExercise', 'createAttemptForSession']),
+    async updateView () {
+      await Promise.all([
+        this.fetchExerciseForSession({
+          sessionId: this.sessionId,
+          exerciseId: this.exerciseId
+        }),
+        this.fetchLastAttemptForExercise({
+          sessionId: this.sessionId,
+          exerciseId: this.exerciseId
+        })
+      ])
+      this.setDefaultSolution()
+    },
+    setDefaultSolution () {
+      if (this.lastAttempt.solution) {
+        this.solution = this.lastAttempt.solution
+      } else {
+        if (this.exercise.template_regions && this.exercise.template_regions.length) {
+          this.solution = this.exercise.template_regions.join('\n')
+        } else {
+          this.solution = ''
+        }
+      }
+    },
+    changeLang (lang) {
+      if (typeof lang === 'undefined') {
+        lang = 'python'
+      } else if (lang === 'c') {
+        lang = 'c_cpp'
+      }
+      this.editor.session.setMode(`ace/mode/${lang}`)
+    },
+    onChange (event, force = false) {
+      const text = this.editor.getValue()
+      if (!force && text === this.content) return
+      this.$emit('change', { text })
+    },
+    async play () {
+      await this.createAttemptForSession({
+        exerciseId: this.exerciseId,
+        sessionId: this.sessionId,
+        solution: this.solution
+      })
+    }
   },
   async mounted () {
-    await this.fetchExercisesForSession({
-      sessionId: this.sessionId
-    })
-
-    if (!isNaN(this.exerciseId)) {
-      this.load()
+    await this.updateView()
+    this.sessionId = parseInt(this.$route.params.sessionId)
+    this.exerciseId = parseInt(this.$route.params.exerciseId)
+    if (!isNaN(this.sessionId) && this.sessionId !== 0 && this.exerciseId !== 0) {
+      await this.fetchSession({ id: this.sessionId })
+      await this.fetchExercisesForSession({ sessionId: this.sessionId })
     }
-
-    await this.fetchLastAttemptForExercise({
-      exerciseId: this.exerciseId
-    })
   },
   updated () {
-    this.editor = ace.edit('editor')
-    this.editor.setTheme('ace/theme/monokai')
-    this.editor.session.setMode('ace/mode/python')
+    this.editor_solution = ace.edit('editor_solution')
+    this.editor_solution.setTheme('ace/theme/monokai')
+    this.editor_solution.changeLang(this.lang)
+
+    this.editor_test = ace.edit('editor_test')
+    this.editor_test.setTheme('ace/theme/monokai')
+    this.editor_test.changeLang(this.lang)
+
+    if (this.content) {
+      this.editor.setValue(this.content)
+      this.editor.clearSelection()
+    }
   },
   watch: {
     '$route.params': {
@@ -156,6 +204,18 @@ export default {
         this.load()
       },
       immediate: true
+    },
+    content (newVal) {
+      if (this.editor && newVal !== this.editor.getValue()) {
+        this.contentJustChanged = true
+        this.editor.setValue(newVal)
+        this.editor.clearSelection()
+      }
+    },
+    lang (newVal) {
+      if (this.editor) {
+        this.changeLang(newVal)
+      }
     }
   }
 }
