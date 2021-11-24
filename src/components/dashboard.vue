@@ -5,7 +5,7 @@
     >
       <div class = "dashboard">
         <v-toolbar dense>
-          <v-toolbar-title>Editeur d'exercice</v-toolbar-title>
+          <v-toolbar-title>Editeur</v-toolbar-title>
         </v-toolbar>
         <v-form>
           <v-row>
